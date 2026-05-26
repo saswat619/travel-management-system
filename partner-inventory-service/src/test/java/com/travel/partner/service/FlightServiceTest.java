@@ -74,7 +74,7 @@ class FlightServiceTest {
 
     @Test
     void testGetFlightById_NotFound() {
-        when(flightRepository.findById(99L)).thenReturn(Optional.empty());
+        when(flightRepository.findByIdAndActiveTrue(99L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> flightService.getFlightById(99L))
                 .isInstanceOf(ResourceNotFoundException.class);
     }

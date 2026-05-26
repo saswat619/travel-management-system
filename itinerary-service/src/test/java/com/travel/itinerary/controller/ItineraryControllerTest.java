@@ -1,6 +1,7 @@
 package com.travel.itinerary.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travel.itinerary.config.AuditConfig;
 import com.travel.itinerary.dto.ItineraryDto;
 import com.travel.itinerary.dto.ItineraryRequest;
 import com.travel.itinerary.security.JwtAuthenticationFilter;
@@ -29,8 +30,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = ItineraryController.class,
-    excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
-        classes = JwtAuthenticationFilter.class))
+    excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = AuditConfig.class)
+    })
 class ItineraryControllerTest {
 
     @Autowired
@@ -72,7 +75,7 @@ class ItineraryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Paris Trip"))
-                .andExpect(jsonPath("$._links").exists());
+                .andExpect(jsonPath("$.status").value("DRAFT"));
     }
 
     @Test

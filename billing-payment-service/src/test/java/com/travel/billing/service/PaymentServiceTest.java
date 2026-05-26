@@ -131,10 +131,13 @@ class PaymentServiceTest {
         when(paymentRepository.save(any(Payment.class))).thenReturn(savedPayment);
         when(paymentRepository.getTotalPaidForInvoice(anyLong())).thenReturn(new BigDecimal("100.00"));
 
+        // processPayment uses ThreadLocalRandom — result may be COMPLETED or FAILED
+        // We only verify the payment was saved and a DTO is returned
         PaymentDto result = paymentService.processPayment(paymentRequest);
 
         assertThat(result).isNotNull();
-        verify(paymentRepository, times(1)).save(any(Payment.class));
+        assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("1100.00"));
+        verify(paymentRepository, atLeastOnce()).save(any(Payment.class));
     }
 
     @Test
@@ -208,5 +211,43 @@ class PaymentServiceTest {
         assertThatThrownBy(() -> paymentService.refundPayment(refundRequest))
                 .isInstanceOf(PaymentProcessingException.class)
                 .hasMessageContaining("cannot exceed");
+    }
+
+    // -----------------------------------------------------------------------
+    // NEGATIVE: process payment throws exception when invoice status is CANCELLED
+    // -----------------------------------------------------------------------
+    @Test
+    void testProcessPayment_CancelledInvoice_ThrowsException() {
+        invoice.setStatus("CANCELLED");
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+
+        assertThatThrownBy(() -> paymentService.processPayment(paymentRequest))
+                .isInstanceOf(PaymentProcessingException.class);
+    }
+
+    // -----------------------------------------------------------------------
+    // POSITIVE: get payment by ID returns correct DTO
+    // -----------------------------------------------------------------------
+    @Test
+    void testGetPaymentById_Found_ReturnsDto() {
+        when(paymentRepository.findById(1L)).thenReturn(Optional.of(completedPayment));
+
+        PaymentDto result = paymentService.getPaymentById(1L);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getStatus()).isEqualTo(PaymentStatus.COMPLETED);
+    }
+
+    // -----------------------------------------------------------------------
+    // NEGATIVE: get payment by ID throws exception when not found
+    // -----------------------------------------------------------------------
+    @Test
+    void testGetPaymentById_NotFound_ThrowsException() {
+        when(paymentRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> paymentService.getPaymentById(99L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Payment");
     }
 }

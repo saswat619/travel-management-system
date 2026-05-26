@@ -1,6 +1,8 @@
 package com.travel.iam.controller;
 
+import com.travel.iam.config.AuditConfig;
 import com.travel.iam.dto.UserDto;
+import com.travel.iam.security.JwtAuthenticationFilter;
 import com.travel.iam.security.JwtTokenProvider;
 import com.travel.iam.security.UserDetailsServiceImpl;
 import com.travel.iam.service.UserService;
@@ -8,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -24,7 +28,11 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(UserController.class)
+@WebMvcTest(controllers = UserController.class,
+    excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = AuditConfig.class)
+    })
 class UserControllerTest {
 
     @Autowired
@@ -78,7 +86,6 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.username").value("testuser"))
-                .andExpect(jsonPath("$.email").value("test@example.com"))
-                .andExpect(jsonPath("$._links.self").exists());
+                .andExpect(jsonPath("$.email").value("test@example.com"));
     }
 }

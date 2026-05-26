@@ -1,6 +1,7 @@
 package com.travel.booking.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travel.booking.config.AuditConfig;
 import com.travel.booking.dto.BookingDto;
 import com.travel.booking.dto.BookingRequest;
 import com.travel.booking.entity.BookingStatus;
@@ -28,9 +29,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(value = BookingController.class,
-        excludeFilters = @ComponentScan.Filter(
-                type = FilterType.ASSIGNABLE_TYPE,
-                classes = JwtAuthenticationFilter.class))
+        excludeFilters = {
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class),
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = AuditConfig.class)
+        })
 class BookingControllerTest {
 
     @Autowired

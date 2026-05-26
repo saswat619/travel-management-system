@@ -1,6 +1,7 @@
 package com.travel.billing.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travel.billing.config.AuditConfig;
 import com.travel.billing.dto.PaymentDto;
 import com.travel.billing.dto.PaymentRequest;
 import com.travel.billing.entity.PaymentStatus;
@@ -30,8 +31,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = {PaymentController.class, InvoiceController.class},
-    excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
-        classes = JwtAuthenticationFilter.class))
+    excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class),
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = AuditConfig.class)
+    })
 class PaymentControllerTest {
 
     @Autowired
@@ -99,7 +102,7 @@ class PaymentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.transactionId").value("TXN-ABC12345"))
-                .andExpect(jsonPath("$._links").exists());
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
     }
 
     @Test

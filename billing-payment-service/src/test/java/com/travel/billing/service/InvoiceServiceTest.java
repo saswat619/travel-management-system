@@ -168,4 +168,74 @@ class InvoiceServiceTest {
 
         assertThat(result).isEmpty();
     }
+
+    // -----------------------------------------------------------------------
+    // POSITIVE: get invoice by invoice number returns correct DTO
+    // -----------------------------------------------------------------------
+    @Test
+    void testGetInvoiceByNumber_Found_ReturnsDto() {
+        when(invoiceRepository.findByInvoiceNumber("INV-20240601-0001"))
+                .thenReturn(Optional.of(invoice));
+
+        InvoiceDto result = invoiceService.getInvoiceByNumber("INV-20240601-0001");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getInvoiceNumber()).isEqualTo("INV-20240601-0001");
+    }
+
+    // -----------------------------------------------------------------------
+    // NEGATIVE: get invoice by number throws exception when not found
+    // -----------------------------------------------------------------------
+    @Test
+    void testGetInvoiceByNumber_NotFound_ThrowsException() {
+        when(invoiceRepository.findByInvoiceNumber("INV-UNKNOWN"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> invoiceService.getInvoiceByNumber("INV-UNKNOWN"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Invoice");
+    }
+
+    // -----------------------------------------------------------------------
+    // POSITIVE: update invoice status from DRAFT to SENT
+    // -----------------------------------------------------------------------
+    @Test
+    void testUpdateInvoiceStatus_DraftToSent_Success() {
+        Invoice updatedInvoice = Invoice.builder()
+                .id(1L)
+                .invoiceNumber("INV-20240601-0001")
+                .bookingId(1L)
+                .userId(1L)
+                .subtotal(new BigDecimal("1000.00"))
+                .taxAmount(new BigDecimal("100.00"))
+                .discountAmount(new BigDecimal("50.00"))
+                .totalAmount(new BigDecimal("1050.00"))
+                .currency("USD")
+                .invoiceDate(LocalDate.now())
+                .dueDate(LocalDate.now().plusDays(30))
+                .status("SENT")
+                .payments(new ArrayList<>())
+                .build();
+
+        when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenReturn(updatedInvoice);
+
+        InvoiceDto result = invoiceService.updateInvoiceStatus(1L, "SENT");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("SENT");
+        verify(invoiceRepository).save(any(Invoice.class));
+    }
+
+    // -----------------------------------------------------------------------
+    // NEGATIVE: update invoice status throws exception when invoice not found
+    // -----------------------------------------------------------------------
+    @Test
+    void testUpdateInvoiceStatus_NotFound_ThrowsException() {
+        when(invoiceRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> invoiceService.updateInvoiceStatus(99L, "SENT"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Invoice");
+    }
 }
